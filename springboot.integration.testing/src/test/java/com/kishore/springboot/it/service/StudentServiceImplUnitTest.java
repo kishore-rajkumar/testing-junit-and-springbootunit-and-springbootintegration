@@ -17,7 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.kishore.springboot.it.data.StudentJpaRepository;
 import com.kishore.springboot.it.dto.StudentDTO;
 import com.kishore.springboot.it.entity.StudentEntity;
-import com.kishore.springboot.it.mapper.MapStructStudentMapper;
+import com.kishore.springboot.it.mapstruct.mapper.StudentMapper;
 
 @ExtendWith(MockitoExtension.class)
 class StudentServiceImplUnitTest {
@@ -26,7 +26,7 @@ class StudentServiceImplUnitTest {
 	private StudentJpaRepository mockRepo;
 
 	@Mock
-	private MapStructStudentMapper mockMapper;
+	private StudentMapper mockMapper;
 
 	@InjectMocks
 	// create object
