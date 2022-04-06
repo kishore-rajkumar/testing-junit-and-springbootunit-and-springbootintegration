@@ -4,8 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
-import com.kishore.springboot.it.mapper.MapStructStudentMapper;
-
 @SpringBootApplication
 public class ApplicationIT {
 

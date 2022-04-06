@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import com.kishore.springboot.it.data.StudentJpaRepository;
 import com.kishore.springboot.it.dto.StudentDTO;
 import com.kishore.springboot.it.entity.StudentEntity;
-import com.kishore.springboot.it.mapper.MapStructStudentMapper;
+import com.kishore.springboot.it.mapstruct.mapper.StudentMapper;
 
 @Service
 public class StudentServiceImpl implements StudentService {
@@ -18,8 +18,8 @@ public class StudentServiceImpl implements StudentService {
 	@Autowired
 	private StudentJpaRepository repository;
 
-//	@Autowired
-	private MapStructStudentMapper mapper;
+	@Autowired
+	private StudentMapper mapper;
 
 	@Override
 	public StudentDTO getStudentById(Long id) {
