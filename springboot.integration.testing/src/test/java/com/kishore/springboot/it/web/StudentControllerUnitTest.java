@@ -2,6 +2,7 @@ package com.kishore.springboot.it.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -10,6 +11,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +26,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kishore.springboot.it.dto.StudentDTO;
 import com.kishore.springboot.it.service.StudentService;
@@ -30,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @WebMvcTest(controllers = StudentRestController.class)
 public class StudentControllerUnitTest {
+
+	private final String APP_URI_PREFIX = "/v1/api/";
 
 	@Autowired
 	private MockMvc mockMvc;
@@ -43,7 +51,7 @@ public class StudentControllerUnitTest {
 	// 1. Verifying HTTP Request Matching
 	@Test
 	void test_default_http_get_request_returns200() throws Exception {
-		mockMvc.perform(get("/v1")).andDo(print()).andExpect(status().isOk())
+		mockMvc.perform(get(APP_URI_PREFIX)).andDo(print()).andExpect(status().isOk())
 				.andExpect(content().string(containsString("Hello, welcome to the workld of testing!")));
 	}
 
@@ -60,9 +68,8 @@ public class StudentControllerUnitTest {
 		// mock service call
 		when(mockService.addStudent(dto)).thenReturn(StudentDTO.builder().id(Long.valueOf(100022)).build());
 
-		mockMvc.perform(
-				post("/v1/student").content(objectMapper.writeValueAsString(dto)).contentType("application/json"))
-				.andExpect(status().isCreated());
+		mockMvc.perform(post(APP_URI_PREFIX + "student").content(objectMapper.writeValueAsString(dto))
+				.contentType("application/json")).andExpect(status().isCreated());
 	}
 
 	/*
@@ -80,9 +87,8 @@ public class StudentControllerUnitTest {
 		// mock service call
 		when(mockService.addStudent(dto)).thenReturn(mockServiceDto);
 
-		MvcResult result = mockMvc.perform(
-				post("/v1/student").content(objectMapper.writeValueAsString(dto)).contentType("application/json"))
-				.andReturn();
+		MvcResult result = mockMvc.perform(post(APP_URI_PREFIX + "student")
+				.content(objectMapper.writeValueAsString(dto)).contentType("application/json")).andReturn();
 
 		MockHttpServletResponse response = result.getResponse();
 
@@ -98,7 +104,7 @@ public class StudentControllerUnitTest {
 		// dto to be added
 		StudentDTO dtoWithNullValues = StudentDTO.builder().build();
 
-		mockMvc.perform(post("/v1/student").content(objectMapper.writeValueAsString(dtoWithNullValues))
+		mockMvc.perform(post(APP_URI_PREFIX + "student").content(objectMapper.writeValueAsString(dtoWithNullValues))
 				.contentType("application/json")).andExpect(status().isBadRequest());
 	}
 
@@ -112,14 +118,80 @@ public class StudentControllerUnitTest {
 		// mock service call
 		when(mockService.addStudent(dto)).thenReturn(StudentDTO.builder().id(Long.valueOf(100022)).build());
 
-		mockMvc.perform(
-				post("/v1/student").content(objectMapper.writeValueAsString(dto)).contentType("application/json"))
-				.andExpect(status().isCreated());
-		
+		mockMvc.perform(post(APP_URI_PREFIX + "student").content(objectMapper.writeValueAsString(dto))
+				.contentType("application/json")).andExpect(status().isCreated());
+
 		ArgumentCaptor<StudentDTO> captor = ArgumentCaptor.forClass(StudentDTO.class);
 		verify(mockService, times(1)).addStudent(captor.capture());
 		assertEquals(captor.getValue().getName(), dto.getName());
 		assertEquals(captor.getValue().getRollNo(), dto.getRollNo());
+	}
+
+	// Verifying HTTP Request Matching
+	@Test
+	void testGetAllStudent_default_http_get_request_returns200() throws Exception {
+		mockMvc.perform(get(APP_URI_PREFIX + "students")).andDo(print()).andExpect(status().isOk());
+	}
+
+	// Verifying EMPTY_LIST RETURN
+	@Test
+	void testGetAllStudent_EMPTY_LIST_WHEN_NO_STUDENTS() throws Exception {
+		// mock service call - EMPTY LIST RETURN
+		when(mockService.getAllStudents()).thenReturn(new ArrayList<>());
+
+		MvcResult result = mockMvc.perform(get(APP_URI_PREFIX + "students")).andExpect(status().isOk()).andReturn();
+		List<StudentDTO> actual = objectMapper.readValue(result.getResponse().getContentAsString(),
+				new TypeReference<List<StudentDTO>>() {
+				});
+		assertEquals(actual.size(), 0);
+	}
+
+	// Verifying LIST OF SIZE 5 RETURN
+	@Test
+	void testGetAllStudent_STUDENT_LIST_WHEN_THERE_ARE_STUDENTS() throws Exception {
+		List<StudentDTO> mockList = new ArrayList<StudentDTO>();
+		mockList.add(StudentDTO.builder().build());
+		mockList.add(StudentDTO.builder().build());
+		mockList.add(StudentDTO.builder().build());
+		mockList.add(StudentDTO.builder().build());
+		mockList.add(StudentDTO.builder().build());
+
+		// mock service call - EMPTY LIST RETURN
+		when(mockService.getAllStudents()).thenReturn(mockList);
+
+		MvcResult result = mockMvc.perform(get(APP_URI_PREFIX + "students")).andExpect(status().isOk()).andReturn();
+		List<StudentDTO> actual = objectMapper.readValue(result.getResponse().getContentAsString(),
+				new TypeReference<List<StudentDTO>>() {
+				});
+		assertEquals(actual.size(), mockList.size());
+	}
+
+	// Verifying BY ID RETURN
+	@Test
+	void testGetStudentById() throws Exception {
+
+		StudentDTO mockStudent = StudentDTO.builder().id(Long.valueOf(100)).name("John Doe").rollNo("100RE").build();
+		// mock service call - EMPTY LIST RETURN
+		when(mockService.getStudentById(Long.valueOf(100))).thenReturn(mockStudent);
+
+		MvcResult result = mockMvc.perform(get(APP_URI_PREFIX + "students/100")).andExpect(status().isOk()).andReturn();
+
+		StudentDTO response = objectMapper.readValue(result.getResponse().getContentAsString(),
+				new TypeReference<StudentDTO>() {
+				});
+
+		assertEquals(mockStudent, response);
+	}
+
+	// Verifying BY INVALID ID RETURN 404
+	@Test
+	void testGetStudentById_INVALID_ID_404_RETURNED() throws Exception {
+
+		// mock service call - EMPTY LIST RETURN
+		when(mockService.getStudentById(any())).thenThrow(NoSuchElementException.class);
+
+		mockMvc.perform(get(APP_URI_PREFIX + "students/9829")).andExpect(status().isNotFound());
+
 	}
 
 }

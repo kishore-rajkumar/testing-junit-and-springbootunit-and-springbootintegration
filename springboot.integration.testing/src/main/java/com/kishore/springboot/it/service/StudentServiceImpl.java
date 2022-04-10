@@ -3,6 +3,7 @@ package com.kishore.springboot.it.service;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,7 +34,9 @@ public class StudentServiceImpl implements StudentService {
 
 	@Override
 	public List<StudentDTO> getAllStudents() {
-		return null;
+		List<StudentEntity> entities = repository.findAll();
+		List<StudentDTO> dtos = entities.stream().map(mapper::studentEntityToDTO).collect(Collectors.toList());
+		return dtos;
 	}
 
 	@Override
